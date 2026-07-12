@@ -1,4 +1,4 @@
-const API = "http://localhost:5000/api";
+const API = "https://finalyearprojectbackend-production-ea86.up.railway.app/api";
 
 export async function loginUser(email, password) {
   const response = await fetch(`${API}/auth/login`, {
