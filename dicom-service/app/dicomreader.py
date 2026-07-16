@@ -10,9 +10,11 @@ def safe_get(ds, tag, default=""):
     return str(value)
 
 
-def extract_metadata(file_path):
+def extract_metadata(source):
 
-    ds = pydicom.dcmread(file_path)
+    # source may be a path or a binary file-like
+    # object (e.g. an uploaded file's stream)
+    ds = pydicom.dcmread(source)
 
     return {
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import Layout from "../components/Layout";
+import { API } from "../services/api";
 import DicomViewer from "../pages/DicomViewer";
 
 export default function ViewStudyPage() {
@@ -19,7 +20,7 @@ export default function ViewStudyPage() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5000/api/studies/${id}`,
+        `${API}/studies/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`

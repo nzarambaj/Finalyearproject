@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { useNavigate } from "react-router-dom";
+import { API } from "../services/api";
 
 export default function DoctorStudiesPage() {
   const [studies, setStudies] = useState([]);
@@ -16,7 +17,7 @@ export default function DoctorStudiesPage() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/studies/doctor-studies",
+        `${API}/studies/doctor-studies`,
         {
           headers: {
             Authorization: `Bearer ${token}`

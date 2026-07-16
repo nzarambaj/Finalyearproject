@@ -1,13 +1,8 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, File, UploadFile
 
 from dicomreader import extract_metadata
 
 app = FastAPI()
-
-
-class DicomRequest(BaseModel):
-    file_path: str
 
 
 @app.get("/")
@@ -18,10 +13,10 @@ def root():
 
 
 @app.post("/extract")
-def extract_dicom(request: DicomRequest):
+def extract_dicom(file: UploadFile = File(...)):
 
     metadata = extract_metadata(
-        request.file_path
+        file.file
     )
 
     return metadata

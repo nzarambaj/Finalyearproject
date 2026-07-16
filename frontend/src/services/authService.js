@@ -1,4 +1,4 @@
-const API = "https://finalyearprojectbackend-production-ea86.up.railway.app/api";
+import { API } from "./api";
 
 export async function loginUser(email, password) {
   const response = await fetch(`${API}/auth/login`, {

@@ -1,6 +1,16 @@
 const path = require("path");
+const FormData = require("form-data");
 const pool = require("../config/db");
+const cloudinary = require("../config/cloudinary");
 const axios = require("axios");
+
+const DICOM_SERVICE_URL =
+    process.env.DICOM_SERVICE_URL ||
+    "http://localhost:8000";
+
+const PUBLIC_URL =
+    process.env.PUBLIC_URL ||
+    "http://localhost:5000";
 
 /*
  * Technician upload Study
@@ -19,21 +29,54 @@ exports.uploadStudy = async (req, res) => {
             patient_identifier
         } = req.body;
 
-        const filePath = req.file.path;
+        // The DICOM service runs on a separate host, so
+        // send the file bytes rather than a local path.
+        const form = new FormData();
 
-        const absolutePath =
-            require("path").resolve(filePath);
+        form.append(
+            "file",
+            req.file.buffer,
+            req.file.originalname
+        );
 
         const dicomResponse =
             await axios.post(
-                "http://localhost:8000/extract",
+                `${DICOM_SERVICE_URL}/extract`,
+                form,
                 {
-                    file_path: absolutePath
+                    headers: form.getHeaders()
                 }
             );
 
         const metadata =
             dicomResponse.data;
+
+        // Store the file on Cloudinary; the returned
+        // URL is what goes into the database.
+        const cloudinaryResult =
+            await new Promise((resolve, reject) => {
+
+                const stream =
+                    cloudinary.uploader.upload_stream(
+                        {
+                            resource_type: "raw",
+                            folder: "dicom",
+                            public_id:
+                                Date.now() +
+                                path.extname(req.file.originalname),
+                            use_filename: false
+                        },
+                        (error, result) =>
+                            error
+                                ? reject(error)
+                                : resolve(result)
+                    );
+
+                stream.end(req.file.buffer);
+
+            });
+
+        const fileUrl = cloudinaryResult.secure_url;
 
         // Create study
         const studyResult = await pool.query(
@@ -72,7 +115,7 @@ exports.uploadStudy = async (req, res) => {
             `,
             [
                 study.id,
-                filePath
+                fileUrl
             ]
         );
 
@@ -210,11 +253,21 @@ exports.getStudyById = async (req, res) => {
 
         if (study.file_path) {
 
-            const filename =
-                path.basename(study.file_path);
+            // New rows store a full Cloudinary URL; rows
+            // from before the migration hold a local path
+            // served by this server's /dicom route.
+            if (study.file_path.startsWith("http")) {
 
-            study.file_url =
-                `http://localhost:5000/dicom/${filename}`;
+                study.file_url = study.file_path;
+
+            } else {
+
+                const filename =
+                    path.basename(study.file_path);
+
+                study.file_url =
+                    `${PUBLIC_URL}/dicom/${filename}`;
+            }
         }
 
         res.json(study);

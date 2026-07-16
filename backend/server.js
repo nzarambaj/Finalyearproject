@@ -21,13 +21,16 @@ app.use(express.json());
 //     )
 // );
 
+// Must match UPLOAD_DIR in middleware/uploadMiddleware.js
+const UPLOAD_DIR = path.resolve(
+    process.env.UPLOAD_DIR || "uploads/dicom"
+);
+
 app.get("/dicom/:filename", (req, res) => {
 
     const filePath = path.join(
-        __dirname,
-        "uploads",
-        "dicom",
-        req.params.filename
+        UPLOAD_DIR,
+        path.basename(req.params.filename)
     );
 
     res.set({

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import dicomParser from "dicom-parser";
+import { API } from "../services/api";
 /**
  * ------------------------------------------------------------------
  * ANNOTATION STATE STRUCTURE
@@ -170,7 +171,7 @@ export default function DicomViewer() {
     const fetchStudy = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/studies/${studyId}`,
+          `${API}/studies/${studyId}`,
           { headers: { Authorization: `Bearer ${TOKEN}` } }
         );
         const data = await res.json();

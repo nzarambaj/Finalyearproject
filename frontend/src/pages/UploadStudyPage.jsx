@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
+import { API } from "../services/api";
 
 export default function UploadStudyPage() {
   const [categories, setCategories] = useState([]);
@@ -23,7 +24,7 @@ export default function UploadStudyPage() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/studies/categories",
+        `${API}/studies/categories`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -97,7 +98,7 @@ export default function UploadStudyPage() {
         localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/studies/upload",
+        `${API}/studies/upload`,
         {
           method: "POST",
           headers: {

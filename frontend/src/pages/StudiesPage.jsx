@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
+import { API } from "../services/api";
 
 export default function StudiesPage() {
 
@@ -18,7 +19,7 @@ export default function StudiesPage() {
         localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/studies/my-studies",
+        `${API}/studies/my-studies`,
         {
           headers: {
             Authorization: `Bearer ${token}`
