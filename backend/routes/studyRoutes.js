@@ -23,7 +23,9 @@ const {
     getStudyById,
     getDoctorStudies,
     getCategories,
-    getMyStudies
+    getMyStudies,
+    addStudyComment,
+    getStudyComments
 } = require("../controllers/studyController");
 
 /*
@@ -77,6 +79,28 @@ router.get(
   authenticateToken,
   authorizeRoles("doctor"),
   getDoctorStudies
+);
+
+/*
+ * Study Comments
+ * Doctors write, everyone involved reads
+ */
+router.post(
+    "/:id/comments",
+    authenticateToken,
+    authorizeRoles("doctor"),
+    addStudyComment
+);
+
+router.get(
+    "/:id/comments",
+    authenticateToken,
+    authorizeRoles(
+        "doctor",
+        "technician",
+        "admin"
+    ),
+    getStudyComments
 );
 
 /*

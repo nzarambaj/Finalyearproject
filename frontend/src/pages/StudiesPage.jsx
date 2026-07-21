@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Layout from "../components/Layout";
+import StudyComments from "../components/StudyComments";
 import { API } from "../services/api";
 
 export default function StudiesPage() {
 
   const [studies, setStudies] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Study whose doctor comments are expanded
+  const [openStudyId, setOpenStudyId] = useState(null);
 
   useEffect(() => {
     loadStudies();
@@ -73,35 +77,84 @@ export default function StudiesPage() {
                 <th style={thStyle}>Modality</th>
                 <th style={thStyle}>Status</th>
                 <th style={thStyle}>Created</th>
+                <th style={thStyle}>
+                  Doctor Comments
+                </th>
               </tr>
             </thead>
 
             <tbody>
 
               {studies.map((study) => (
-                <tr key={study.id}>
-                  <td style={tdStyle}>
-                    {study.patient_identifier}
-                  </td>
+                <Fragment key={study.id}>
+                  <tr>
+                    <td style={tdStyle}>
+                      {study.patient_identifier}
+                    </td>
 
-                  <td style={tdStyle}>
-                    {study.category}
-                  </td>
+                    <td style={tdStyle}>
+                      {study.category}
+                    </td>
 
-                  <td style={tdStyle}>
-                    {study.modality || "-"}
-                  </td>
+                    <td style={tdStyle}>
+                      {study.modality || "-"}
+                    </td>
 
-                  <td style={tdStyle}>
-                    {study.status}
-                  </td>
+                    <td style={tdStyle}>
+                      {study.status}
+                    </td>
 
-                  <td style={tdStyle}>
-                    {new Date(
-                      study.created_at
-                    ).toLocaleString()}
-                  </td>
-                </tr>
+                    <td style={tdStyle}>
+                      {new Date(
+                        study.created_at
+                      ).toLocaleString()}
+                    </td>
+
+                    <td style={tdStyle}>
+                      <button
+                        onClick={() =>
+                          setOpenStudyId(
+                            openStudyId === study.id
+                              ? null
+                              : study.id
+                          )
+                        }
+                        style={{
+                          background:
+                            openStudyId === study.id
+                              ? "#6b7280"
+                              : "#2563eb",
+                          color: "white",
+                          border: "none",
+                          padding: "8px 12px",
+                          borderRadius: "6px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {openStudyId === study.id
+                          ? "Hide"
+                          : "View"}
+                      </button>
+                    </td>
+                  </tr>
+
+                  {openStudyId === study.id && (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        style={{
+                          padding: "0 12px 12px",
+                          background: "#f9fafb"
+                        }}
+                      >
+                        <StudyComments
+                          studyId={study.id}
+                          canComment={false}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
 
             </tbody>

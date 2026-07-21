@@ -364,3 +364,131 @@ exports.getCategories = async (
 
   }
 };
+
+/*
+ * Doctor comments on a study
+ * (radiologist: findings on the image,
+ *  other specialists: recommended examination)
+ */
+exports.addStudyComment = async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+        const { comment } = req.body;
+
+        if (!comment || !comment.trim()) {
+            return res.status(400).json({
+                message: "Comment is required"
+            });
+        }
+
+        // Only a doctor whose specialization the
+        // study's category is assigned to may comment.
+        const allowed = await pool.query(
+            `
+            SELECT 1
+
+            FROM studies s
+
+            JOIN study_categories sc
+                ON s.category_id = sc.id
+
+            JOIN doctor_profiles dp
+                ON dp.specialization_id =
+                   sc.specialization_id
+
+            WHERE s.id = $1
+              AND dp.user_id = $2
+            `,
+            [id, req.user.id]
+        );
+
+        if (allowed.rows.length === 0) {
+            return res.status(403).json({
+                message:
+                    "Study is not assigned to you"
+            });
+        }
+
+        const result = await pool.query(
+            `
+            INSERT INTO study_comments
+            (
+                study_id,
+                doctor_id,
+                comment
+            )
+            VALUES ($1,$2,$3)
+            RETURNING *
+            `,
+            [
+                id,
+                req.user.id,
+                comment.trim()
+            ]
+        );
+
+        res.status(201).json(result.rows[0]);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+
+    }
+};
+
+/*
+ * List comments on a study
+ * Doctor + Technician + Admin
+ */
+exports.getStudyComments = async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `
+            SELECT
+                c.id,
+                c.comment,
+                c.created_at,
+
+                u.full_name AS doctor_name,
+                s.name AS specialization
+
+            FROM study_comments c
+
+            JOIN users u
+                ON c.doctor_id = u.id
+
+            LEFT JOIN doctor_profiles dp
+                ON dp.user_id = u.id
+
+            LEFT JOIN specializations s
+                ON s.id = dp.specialization_id
+
+            WHERE c.study_id = $1
+
+            ORDER BY c.created_at DESC
+            `,
+            [id]
+        );
+
+        res.json(result.rows);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+
+    }
+};

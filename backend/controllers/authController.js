@@ -86,7 +86,21 @@ exports.login = async (req, res) => {
         } = req.body;
 
         const userResult = await pool.query(
-            "SELECT * FROM users WHERE email=$1",
+            `
+            SELECT
+                u.*,
+                s.name AS specialization
+
+            FROM users u
+
+            LEFT JOIN doctor_profiles dp
+                ON dp.user_id = u.id
+
+            LEFT JOIN specializations s
+                ON s.id = dp.specialization_id
+
+            WHERE u.email=$1
+            `,
             [email]
         );
 
@@ -126,7 +140,9 @@ exports.login = async (req, res) => {
                 id: user.id,
                 full_name: user.full_name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                specialization:
+                    user.specialization || null
             }
         });
 
@@ -142,9 +158,22 @@ exports.getCurrentUser = async (req, res) => {
     try {
 
         const result = await pool.query(
-            `SELECT id, full_name, email, role
-             FROM users
-             WHERE id = $1`,
+            `SELECT
+                u.id,
+                u.full_name,
+                u.email,
+                u.role,
+                s.name AS specialization
+
+             FROM users u
+
+             LEFT JOIN doctor_profiles dp
+                ON dp.user_id = u.id
+
+             LEFT JOIN specializations s
+                ON s.id = dp.specialization_id
+
+             WHERE u.id = $1`,
             [req.user.id]
         );
 

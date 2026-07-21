@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { useNavigate } from "react-router-dom";
 import { API } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function DoctorStudiesPage() {
   const [studies, setStudies] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const isRadiologist =
+    user?.specialization === "Radiologist";
 
   useEffect(() => {
     loadStudies();
@@ -118,7 +123,9 @@ export default function DoctorStudiesPage() {
                           cursor: "pointer"
                         }}
                       >
-                        View
+                        {isRadiologist
+                          ? "View"
+                          : "Comment"}
                       </button>
                     </td>
                   </tr>
