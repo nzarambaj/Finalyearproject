@@ -4,3 +4,4 @@ pydicom
 python-multipart
 numpy
 pillow
+nibabel

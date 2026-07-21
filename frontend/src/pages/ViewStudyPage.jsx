@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 
 import Layout from "../components/Layout";
 import StudyComments from "../components/StudyComments";
+import NiftiViewer from "../components/NiftiViewer";
 import { API } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import DicomViewer from "../pages/DicomViewer";
@@ -116,7 +117,14 @@ export default function ViewStudyPage() {
           </div>
         </div>
 
-        {isRadiologist && <DicomViewer />}
+        {isRadiologist &&
+          (/\.nii(\.gz)?$/i.test(
+            study.file_url || study.file_path || ""
+          ) ? (
+            <NiftiViewer fileUrl={study.file_url} />
+          ) : (
+            <DicomViewer />
+          ))}
 
         <StudyComments
           studyId={id}

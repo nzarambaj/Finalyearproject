@@ -51,6 +51,13 @@ exports.uploadStudy = async (req, res) => {
         const metadata =
             dicomResponse.data;
 
+        // .nii.gz must keep its double extension so the
+        // stored URL still identifies the file format.
+        const fileExt =
+            /\.nii\.gz$/i.test(req.file.originalname)
+                ? ".nii.gz"
+                : path.extname(req.file.originalname);
+
         // Store the file on Cloudinary; the returned
         // URL is what goes into the database.
         const cloudinaryResult =
@@ -62,8 +69,7 @@ exports.uploadStudy = async (req, res) => {
                             resource_type: "raw",
                             folder: "dicom",
                             public_id:
-                                Date.now() +
-                                path.extname(req.file.originalname),
+                                Date.now() + fileExt,
                             use_filename: false
                         },
                         (error, result) =>
@@ -77,6 +83,30 @@ exports.uploadStudy = async (req, res) => {
             });
 
         const fileUrl = cloudinaryResult.secure_url;
+
+        // NIfTI files carry no modality tag; fall back
+        // to the category's modality prefix, e.g.
+        // "CT - NEUROSURGEON" -> "CT".
+        let modality = metadata.modality;
+
+        if (!modality) {
+
+            const categoryResult = await pool.query(
+                `
+                SELECT name
+                FROM study_categories
+                WHERE id = $1
+                `,
+                [category_id]
+            );
+
+            const categoryName =
+                categoryResult.rows[0]?.name || "";
+
+            modality =
+                categoryName.split(" - ")[0].trim() ||
+                null;
+        }
 
         // Create study
         const studyResult = await pool.query(
@@ -96,7 +126,7 @@ exports.uploadStudy = async (req, res) => {
                 req.user.id,
                 metadata.patient_id || patient_identifier,
                 category_id,
-                metadata.modality,
+                modality,
                 JSON.stringify(metadata)
             ]
         );

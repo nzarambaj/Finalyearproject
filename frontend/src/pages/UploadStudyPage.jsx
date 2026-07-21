@@ -70,7 +70,9 @@ export default function UploadStudyPage() {
     }
 
     if (!file) {
-      setError("Select DICOM file");
+      setError(
+        "Select a DICOM (.dcm) or NIfTI (.nii, .nii.gz) file"
+      );
       return;
     }
 
@@ -221,7 +223,7 @@ export default function UploadStudyPage() {
 
           <input
             type="file"
-            accept=".dcm"
+            accept=".dcm,.nii,.nii.gz,application/gzip"
             onChange={(e) =>
               setFile(
                 e.target.files[0]

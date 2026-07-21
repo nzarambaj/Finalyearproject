@@ -16,7 +16,8 @@ def root():
 def extract_dicom(file: UploadFile = File(...)):
 
     metadata = extract_metadata(
-        file.file
+        file.file,
+        file.filename or ""
     )
 
     return metadata

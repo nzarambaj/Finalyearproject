@@ -14,6 +14,7 @@
     "@cornerstonejs/dicom-image-loader": "^5.0.8",
     "@cornerstonejs/tools": "^5.0.8",
     "dicom-parser": "^1.8.21",
+    "nifti-reader-js": "^0.8.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.17.0"
