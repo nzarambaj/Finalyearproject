@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { loginUser } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
@@ -267,8 +267,8 @@ const handleSubmit = async (e) => {
           }}
         >
           Don't have an account?{" "}
-          <a
-            href="/register"
+          <Link
+            to="/register"
             style={{
               color: "#2563eb",
               textDecoration: "none",
@@ -276,7 +276,7 @@ const handleSubmit = async (e) => {
             }}
           >
             Register
-          </a>
+          </Link>
         </p>
       </div>
     </div>
