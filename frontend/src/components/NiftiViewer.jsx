@@ -45,13 +45,23 @@ export default function NiftiViewer({ fileUrl }) {
 
         if (!voxels) {
           throw new Error(
-            "Unsupported NIfTI datatype"
+            `Unsupported NIfTI datatype (code ${header.datatypeCode})`
           );
         }
 
         const nx = header.dims[1];
         const ny = header.dims[2];
         const nz = Math.max(header.dims[3] || 1, 1);
+
+        // Some synthetic/test files store data only in
+        // time or higher dimensions — nothing to draw.
+        if (nx * ny < 4) {
+          throw new Error(
+            `This file has no displayable image plane ` +
+              `(spatial dimensions ${nx}×${ny}×${nz}). ` +
+              `Please upload a scan with real image slices.`
+          );
+        }
 
         // Rescale slope/intercept (0 slope means unset)
         const slope = header.scl_slope || 1;
@@ -266,9 +276,61 @@ function toTypedArray(header, buffer) {
       return new Float32Array(buffer);
     case nifti.NIFTI1.TYPE_FLOAT64:
       return new Float64Array(buffer);
+
+    case nifti.NIFTI1.TYPE_INT64:
+      return Float64Array.from(
+        new BigInt64Array(buffer),
+        Number
+      );
+
+    case nifti.NIFTI1.TYPE_UINT64:
+      return Float64Array.from(
+        new BigUint64Array(buffer),
+        Number
+      );
+
+    // Complex volumes (e.g. raw MRI data): display
+    // the magnitude of each voxel.
+    case nifti.NIFTI1.TYPE_COMPLEX64:
+      return complexMagnitude(
+        new Float32Array(buffer)
+      );
+
+    case nifti.NIFTI1.TYPE_COMPLEX128:
+      return complexMagnitude(
+        new Float64Array(buffer)
+      );
+
+    // RGB volumes: display luminance.
+    case nifti.NIFTI1.TYPE_RGB24: {
+      const rgb = new Uint8Array(buffer);
+      const out = new Float32Array(rgb.length / 3);
+
+      for (let i = 0; i < out.length; i++) {
+        out[i] =
+          0.299 * rgb[i * 3] +
+          0.587 * rgb[i * 3 + 1] +
+          0.114 * rgb[i * 3 + 2];
+      }
+
+      return out;
+    }
+
     default:
       return null;
   }
+}
+
+function complexMagnitude(pairs) {
+  const out = new Float64Array(pairs.length / 2);
+
+  for (let i = 0; i < out.length; i++) {
+    const re = pairs[i * 2];
+    const im = pairs[i * 2 + 1];
+    out[i] = Math.sqrt(re * re + im * im);
+  }
+
+  return out;
 }
 
 const boxStyle = {

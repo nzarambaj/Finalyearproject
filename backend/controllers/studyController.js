@@ -259,7 +259,8 @@ exports.getStudyById = async (req, res) => {
                 df.file_path
             FROM studies s
 
-            JOIN study_categories sc
+            -- request-flow studies have no category
+            LEFT JOIN study_categories sc
                 ON s.category_id = sc.id
 
             JOIN users u
