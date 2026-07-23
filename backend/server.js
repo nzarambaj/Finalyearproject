@@ -8,6 +8,7 @@ const authRoutes = require("./routes/authRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
 const studyRoutes = require("./routes/studyRoutes");
+const requestRoutes = require("./routes/requestRoutes");
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/studies", studyRoutes);
+app.use("/api/requests", requestRoutes);
 
 app.get("/", (req, res) => {
     res.json({

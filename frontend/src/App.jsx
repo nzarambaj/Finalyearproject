@@ -13,6 +13,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import UploadStudyPage from "./pages/UploadStudyPage";
 import DoctorStudiesPage from "./pages/DoctorStudiesPage";
 import ViewStudyPage from "./pages/ViewStudyPage";
+import NewRequestPage from "./pages/NewRequestPage";
+import RequestsPage from "./pages/RequestsPage";
+import RequestDetailPage from "./pages/RequestDetailPage";
 
 export default function App() {
   return (
@@ -87,6 +90,33 @@ export default function App() {
             roles={["technician"]}
           >
             <UploadStudyPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/requests"
+        element={
+          <ProtectedRoute roles={["doctor","technician","admin"]}>
+            <RequestsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/requests/new"
+        element={
+          <ProtectedRoute roles={["doctor"]}>
+            <NewRequestPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/requests/:id"
+        element={
+          <ProtectedRoute roles={["doctor","technician","admin"]}>
+            <RequestDetailPage />
           </ProtectedRoute>
         }
       />

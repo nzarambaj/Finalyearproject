@@ -126,8 +126,12 @@ const activeBtnStyle = {
   color: "#fff",
 };
 
-export default function DicomViewer() {
-  const { id: studyId } = useParams();
+export default function DicomViewer({ studyId: studyIdProp }) {
+  const { id: routeId } = useParams();
+
+  // Prefer an explicit prop (e.g. from the request
+  // detail page); fall back to the route param.
+  const studyId = studyIdProp ?? routeId;
   const TOKEN = localStorage.getItem("token");
   const containerRef = useRef(null);
   const canvasRef = useRef(null);

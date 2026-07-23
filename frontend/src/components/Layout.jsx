@@ -52,40 +52,40 @@ export default function Layout({ children }) {
 
           {/* Technician Menu */}
           {user?.role === "technician" && (
-            <>
-              <Link
-                style={linkStyle}
-                to="/studies"
-              >
-                My Studies
-              </Link>
-
-              <Link
-                style={linkStyle}
-                to="/upload-study"
-              >
-                Upload Study
-              </Link>
-            </>
+            <Link
+              style={linkStyle}
+              to="/requests"
+            >
+              Imaging Requests
+            </Link>
           )}
 
           {/* Doctor Menu */}
           {user?.role === "doctor" && (
-            <Link
-              style={linkStyle}
-              to="/doctor-studies"
-            >
-              Assigned Studies
-            </Link>
+            <>
+              <Link
+                style={linkStyle}
+                to="/requests/new"
+              >
+                New Request
+              </Link>
+
+              <Link
+                style={linkStyle}
+                to="/requests"
+              >
+                Imaging Requests
+              </Link>
+            </>
           )}
 
           {/* Admin Menu (future use) */}
           {user?.role === "admin" && (
             <Link
               style={linkStyle}
-              to="/studies"
+              to="/requests"
             >
-              All Studies
+              All Requests
             </Link>
           )}
 
