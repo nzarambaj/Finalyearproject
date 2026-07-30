@@ -14,6 +14,7 @@ const upload =
 const {
     createRequest,
     getRequests,
+    getWorklist,
     getRequestById,
     uploadRequestImage,
     getRequestComments,
@@ -42,6 +43,17 @@ router.get(
         "admin"
     ),
     getRequests
+);
+
+/*
+ * Doctor worklist overview (stats + list)
+ * Registered before "/:id" so it isn't captured.
+ */
+router.get(
+    "/worklist",
+    authenticateToken,
+    authorizeRoles("doctor", "admin"),
+    getWorklist
 );
 
 /*

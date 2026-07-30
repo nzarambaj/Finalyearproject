@@ -65,6 +65,13 @@ export default function Layout({ children }) {
             <>
               <Link
                 style={linkStyle}
+                to="/worklist"
+              >
+                Worklist
+              </Link>
+
+              <Link
+                style={linkStyle}
                 to="/requests/new"
               >
                 New Request

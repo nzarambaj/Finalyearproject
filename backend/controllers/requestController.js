@@ -27,8 +27,12 @@ exports.createRequest = async (req, res) => {
             phone,
             address,
             exam_type,
-            clinical_notes
+            clinical_notes,
+            priority
         } = req.body;
+
+        const requestPriority =
+            priority === "urgent" ? "urgent" : "normal";
 
         if (!patient_name || !patient_name.trim()) {
             return res.status(400).json({
@@ -79,7 +83,8 @@ exports.createRequest = async (req, res) => {
                 patient_id,
                 doctor_id,
                 exam_type,
-                clinical_notes
+                clinical_notes,
+                priority
             )
             VALUES (
                 nextval('imaging_requests_id_seq'),
@@ -89,7 +94,7 @@ exports.createRequest = async (req, res) => {
                     )::text,
                     5, '0'
                 ),
-                $1,$2,$3,$4
+                $1,$2,$3,$4,$5
             )
             RETURNING *
             `,
@@ -97,7 +102,8 @@ exports.createRequest = async (req, res) => {
                 patient.id,
                 req.user.id,
                 exam_type,
-                clinical_notes || null
+                clinical_notes || null,
+                requestPriority
             ]
         );
 
@@ -184,6 +190,165 @@ exports.getRequests = async (req, res) => {
         );
 
         res.json(result.rows);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Server error"
+        });
+
+    }
+};
+
+/*
+ * Worklist overview for doctors: headline stats plus
+ * the full request list with a derived read-status
+ * (pending -> no image yet, review -> image uploaded
+ * but not yet read, ready -> read & commented).
+ */
+exports.getWorklist = async (req, res) => {
+
+    try {
+
+        const statsResult = await pool.query(
+            `
+            SELECT
+                -- studies (images) captured today
+                (
+                    SELECT COUNT(*)
+                    FROM studies
+                    WHERE created_at::date = CURRENT_DATE
+                ) AS todays_studies,
+
+                -- image uploaded but not yet read
+                (
+                    SELECT COUNT(*)
+                    FROM imaging_requests r
+                    WHERE r.status = 'completed'
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM request_comments c
+                          WHERE c.request_id = r.id
+                      )
+                ) AS pending_reads,
+
+                -- of those, how many are urgent
+                (
+                    SELECT COUNT(*)
+                    FROM imaging_requests r
+                    WHERE r.status = 'completed'
+                      AND r.priority = 'urgent'
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM request_comments c
+                          WHERE c.request_id = r.id
+                      )
+                ) AS urgent_reads,
+
+                -- reports (comments) issued this month
+                (
+                    SELECT COUNT(DISTINCT c.request_id)
+                    FROM request_comments c
+                    WHERE date_trunc('month', c.created_at)
+                        = date_trunc('month', CURRENT_DATE)
+                ) AS reports_issued,
+
+                -- patients registered this month
+                (
+                    SELECT COUNT(*)
+                    FROM patients
+                    WHERE date_trunc('month', created_at)
+                        = date_trunc('month', CURRENT_DATE)
+                ) AS active_patients,
+
+                -- studies captured yesterday (for the delta)
+                (
+                    SELECT COUNT(*)
+                    FROM studies
+                    WHERE created_at::date
+                        = CURRENT_DATE - INTERVAL '1 day'
+                ) AS yesterday_studies
+            `
+        );
+
+        const itemsResult = await pool.query(
+            `
+            SELECT
+                r.id,
+                r.request_number,
+                r.exam_type,
+                r.status,
+                r.priority,
+                r.created_at,
+                r.doctor_id,
+
+                p.full_name AS patient_name,
+
+                u.full_name AS doctor_name,
+
+                EXISTS (
+                    SELECT 1
+                    FROM request_comments c
+                    WHERE c.request_id = r.id
+                ) AS has_report
+
+            FROM imaging_requests r
+
+            JOIN patients p
+                ON r.patient_id = p.id
+
+            JOIN users u
+                ON r.doctor_id = u.id
+
+            ORDER BY
+                CASE WHEN r.priority = 'urgent'
+                     THEN 0 ELSE 1 END,
+                r.created_at DESC
+            `
+        );
+
+        const items = itemsResult.rows.map((r) => {
+
+            let readStatus = "pending";
+
+            if (r.status === "completed") {
+                readStatus = r.has_report
+                    ? "ready"
+                    : "review";
+            }
+
+            return {
+                ...r,
+                read_status: readStatus
+            };
+        });
+
+        const stats = statsResult.rows[0];
+
+        const pending = items.filter(
+            (i) => i.read_status !== "ready"
+        ).length;
+
+        res.json({
+            stats: {
+                todays_studies:
+                    Number(stats.todays_studies),
+                yesterday_studies:
+                    Number(stats.yesterday_studies),
+                pending_reads:
+                    Number(stats.pending_reads),
+                urgent_reads:
+                    Number(stats.urgent_reads),
+                reports_issued:
+                    Number(stats.reports_issued),
+                active_patients:
+                    Number(stats.active_patients)
+            },
+            pending_count: pending,
+            items
+        });
 
     } catch (error) {
 

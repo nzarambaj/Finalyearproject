@@ -16,6 +16,7 @@ import ViewStudyPage from "./pages/ViewStudyPage";
 import NewRequestPage from "./pages/NewRequestPage";
 import RequestsPage from "./pages/RequestsPage";
 import RequestDetailPage from "./pages/RequestDetailPage";
+import WorklistPage from "./pages/WorklistPage";
 
 export default function App() {
   return (
@@ -90,6 +91,15 @@ export default function App() {
             roles={["technician"]}
           >
             <UploadStudyPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/worklist"
+        element={
+          <ProtectedRoute roles={["doctor","admin"]}>
+            <WorklistPage />
           </ProtectedRoute>
         }
       />

@@ -27,6 +27,7 @@ export default function NewRequestPage() {
   const [address, setAddress] = useState("");
 
   const [examType, setExamType] = useState("");
+  const [priority, setPriority] = useState("normal");
   const [clinicalNotes, setClinicalNotes] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -66,6 +67,7 @@ export default function NewRequestPage() {
           phone: phone || null,
           address: address || null,
           exam_type: examType,
+          priority,
           clinical_notes: clinicalNotes
         })
       });
@@ -283,6 +285,21 @@ export default function NewRequestPage() {
                 {t}
               </option>
             ))}
+          </select>
+
+          <select
+            value={priority}
+            onChange={(e) =>
+              setPriority(e.target.value)
+            }
+            style={inputStyle}
+          >
+            <option value="normal">
+              Normal priority
+            </option>
+            <option value="urgent">
+              Urgent
+            </option>
           </select>
 
           <textarea
