@@ -14,6 +14,20 @@ exports.register = async (req, res) => {
             specialization_id
         } = req.body;
 
+        // Friendly message instead of a unique-constraint
+        // 500 when the email is already taken.
+        const existing = await pool.query(
+            "SELECT 1 FROM users WHERE email = $1",
+            [email]
+        );
+
+        if (existing.rows.length > 0) {
+            return res.status(409).json({
+                message:
+                    "An account with this email already exists"
+            });
+        }
+
         const hashedPassword =
             await bcrypt.hash(password, 10);
 
@@ -70,6 +84,14 @@ exports.register = async (req, res) => {
     } catch (error) {
 
         console.error(error);
+
+        // Postgres unique_violation (race on email)
+        if (error.code === "23505") {
+            return res.status(409).json({
+                message:
+                    "An account with this email already exists"
+            });
+        }
 
         res.status(500).json({
             message:
