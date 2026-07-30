@@ -68,12 +68,17 @@ router.post(
 );
 
 /*
- * Comments (requesting doctor only)
+ * Comments: anyone authorised may read; only the
+ * requesting doctor may write (enforced in controller).
  */
 router.get(
     "/:id/comments",
     authenticateToken,
-    authorizeRoles("doctor"),
+    authorizeRoles(
+        "doctor",
+        "technician",
+        "admin"
+    ),
     getRequestComments
 );
 

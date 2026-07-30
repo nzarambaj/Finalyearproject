@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { API } from "../services/api";
 
 /*
- * Comments on an imaging request. The backend only
- * serves these to the doctor who submitted the
- * request, so this component is rendered for the
- * owner alone.
+ * Comments on an imaging request. Any doctor can read
+ * them; only the requesting doctor (canComment) sees
+ * the form to add one.
  */
-export default function RequestComments({ requestId }) {
+export default function RequestComments({
+  requestId,
+  canComment = false
+}) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -100,9 +102,10 @@ export default function RequestComments({ requestId }) {
       }}
     >
       <h3 style={{ marginTop: 0 }}>
-        My Findings & Comments
+        Findings & Comments
       </h3>
 
+      {canComment && (
       <form
         onSubmit={handleSubmit}
         style={{ marginBottom: "20px" }}
@@ -155,6 +158,7 @@ export default function RequestComments({ requestId }) {
           {saving ? "Saving..." : "Add Comment"}
         </button>
       </form>
+      )}
 
       {loading ? (
         <p>Loading comments...</p>

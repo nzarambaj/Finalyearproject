@@ -340,9 +340,14 @@ export default function RequestDetailPage() {
             />
           ))}
 
-        {/* Comments: requesting doctor only */}
-        {isOwner && (
-          <RequestComments requestId={id} />
+        {/* Comments: any doctor can read; only the
+            requesting doctor can add one. */}
+        {(user?.role === "doctor" ||
+          user?.role === "admin") && (
+          <RequestComments
+            requestId={id}
+            canComment={isOwner}
+          />
         )}
       </div>
     </Layout>

@@ -60,10 +60,9 @@ export default function RequestsPage() {
     loadRequests(search);
   };
 
-  const canOpen = (request) =>
-    user?.role === "technician" ||
-    user?.role === "admin" ||
-    request.doctor_id === user?.id;
+  // Any authorised user can open any request to view
+  // it and its comments; only the owner can comment.
+  const canOpen = () => true;
 
   return (
     <Layout>

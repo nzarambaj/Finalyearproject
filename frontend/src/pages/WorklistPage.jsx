@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 import Layout from "../components/Layout";
 import { API } from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 /*
  * Doctor worklist overview: headline stats and the
@@ -12,7 +11,6 @@ import { useAuth } from "../context/AuthContext";
  */
 export default function WorklistPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,9 +54,9 @@ export default function WorklistPage() {
     }
   );
 
-  const canOpen = (item) =>
-    user?.role === "admin" ||
-    item.doctor_id === user?.id;
+  // Any doctor can open any request to view it; only
+  // the requesting doctor can comment on it.
+  const canOpen = () => true;
 
   const stats = data?.stats;
   const delta = stats

@@ -364,8 +364,8 @@ exports.getWorklist = async (req, res) => {
 /*
  * Request details: patient record, clinical notes
  * and the uploaded image (once it exists).
- * Technicians may open any request; a doctor may
- * only open their own.
+ * Any authorised user may view any request; only the
+ * requesting doctor can comment on it.
  */
 exports.getRequestById = async (req, res) => {
 
@@ -411,16 +411,6 @@ exports.getRequestById = async (req, res) => {
         }
 
         const request = result.rows[0];
-
-        if (
-            req.user.role === "doctor" &&
-            request.doctor_id !== req.user.id
-        ) {
-            return res.status(403).json({
-                message:
-                    "Only the requesting doctor can view this request"
-            });
-        }
 
         if (
             request.file_path &&
@@ -597,8 +587,9 @@ exports.uploadRequestImage = async (req, res) => {
 };
 
 /*
- * Comments on a request. Only the doctor who
- * submitted the request may read or write them.
+ * Comments on a request. Anyone authorised may read
+ * them; only the doctor who submitted the request
+ * may write them.
  */
 
 async function loadOwnedRequest(id, userId) {
@@ -629,21 +620,14 @@ exports.getRequestComments = async (req, res) => {
 
         const { id } = req.params;
 
-        const owned = await loadOwnedRequest(
-            id,
-            req.user.id
+        const exists = await pool.query(
+            "SELECT 1 FROM imaging_requests WHERE id = $1",
+            [id]
         );
 
-        if (owned.error === 404) {
+        if (exists.rows.length === 0) {
             return res.status(404).json({
                 message: "Request not found"
-            });
-        }
-
-        if (owned.error === 403) {
-            return res.status(403).json({
-                message:
-                    "Only the requesting doctor can view these comments"
             });
         }
 
