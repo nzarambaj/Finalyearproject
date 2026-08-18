@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { API as API_URL } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
 const navigate = useNavigate();
+const { logout } = useAuth();
+
+const handleLogout = () => {
+  logout();
+  navigate("/admin");
+};
 
 const [specializations, setSpecializations] = useState([]);
 
@@ -21,7 +28,10 @@ const [success, setSuccess] = useState("");
 const [loading, setLoading] = useState(false);
 
 useEffect(() => {
-fetch(`${API_URL}/doctors/specializations`)
+const token = localStorage.getItem("token");
+fetch(`${API_URL}/doctors/specializations`, {
+  headers: { Authorization: `Bearer ${token}` }
+})
 .then((res) => res.json())
 .then((data) => setSpecializations(data))
 .catch((err) => console.error(err));
@@ -65,12 +75,15 @@ try {
   setError("");
   setSuccess("");
 
+  const token = localStorage.getItem("token");
+
   const response = await fetch(
     `${API_URL}/auth/register`,
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
         full_name: fullName,
@@ -94,12 +107,15 @@ try {
   }
 
   setSuccess(
-    "Account created successfully. Redirecting..."
+    `User "${email}" registered successfully.`
   );
 
-  setTimeout(() => {
-    navigate("/login");
-  }, 1500);
+  // Stay on the page so the admin can register more.
+  setFullName("");
+  setEmail("");
+  setPassword("");
+  setRole("doctor");
+  setSpecializationId("");
 
 } catch (err) {
   setError(err.message);
@@ -393,17 +409,20 @@ return (
             color: "#6b7280"
         }}
         >
-        Already have an account?{" "}
-        <Link
-            to="/login"
+        <button
+            type="button"
+            onClick={handleLogout}
             style={{
             color: "#2563eb",
             fontWeight: "600",
-            textDecoration: "none"
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "inherit"
             }}
         >
-            Sign In
-        </Link>
+            Log out
+        </button>
         </p>
     </div>
     </div>

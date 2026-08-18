@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { loginUser } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
@@ -258,26 +258,6 @@ const handleSubmit = async (e) => {
           </button>
         </form>
 
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: "20px",
-            fontSize: "14px",
-            color: "#6b7280"
-          }}
-        >
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            style={{
-              color: "#2563eb",
-              textDecoration: "none",
-              fontWeight: "600"
-            }}
-          >
-            Register
-          </Link>
-        </p>
       </div>
     </div>
   );

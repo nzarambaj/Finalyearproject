@@ -17,6 +17,7 @@ import NewRequestPage from "./pages/NewRequestPage";
 import RequestsPage from "./pages/RequestsPage";
 import RequestDetailPage from "./pages/RequestDetailPage";
 import WorklistPage from "./pages/WorklistPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
 
 export default function App() {
   return (
@@ -80,8 +81,17 @@ export default function App() {
       />
 
       <Route
+        path="/admin"
+        element={<AdminLoginPage />}
+      />
+
+      <Route
         path="/register"
-        element={<RegisterPage />}
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <RegisterPage />
+          </ProtectedRoute>
+        }
       />
 
       <Route
