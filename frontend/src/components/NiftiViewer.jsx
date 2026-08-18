@@ -37,6 +37,9 @@ const OVERLAY_COLORMAPS = [
   "violet"
 ];
 
+// Fixed overlay opacity (no user slider).
+const OVERLAY_OPACITY = 0.7;
+
 export default function NiftiViewer({ fileUrl, overlayUrl }) {
   const canvasRef = useRef(null);
   const nvRef = useRef(null);
@@ -46,7 +49,7 @@ export default function NiftiViewer({ fileUrl, overlayUrl }) {
 
   const [view, setView] = useState("multi");
   const [colormap, setColormap] = useState("red");
-  const [opacity, setOpacity] = useState(0.6);
+  const [showOverlay, setShowOverlay] = useState(true);
 
   // Create/attach NiiVue once and (re)load volumes when
   // the CT or overlay URL changes.
@@ -76,7 +79,7 @@ export default function NiftiViewer({ fileUrl, overlayUrl }) {
           volumes.push({
             url: overlayUrl,
             colormap,
-            opacity
+            opacity: showOverlay ? OVERLAY_OPACITY : 0
           });
         }
 
@@ -120,9 +123,9 @@ export default function NiftiViewer({ fileUrl, overlayUrl }) {
   useEffect(() => {
     const nv = nvRef.current;
     if (nv && nv.volumes && nv.volumes.length > 1) {
-      nv.setOpacity(1, opacity);
+      nv.setOpacity(1, showOverlay ? OVERLAY_OPACITY : 0);
     }
-  }, [opacity]);
+  }, [showOverlay]);
 
   // Free the WebGL context on unmount.
   useEffect(() => {
@@ -207,20 +210,15 @@ export default function NiftiViewer({ fileUrl, overlayUrl }) {
             ))}
           </select>
 
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={opacity}
-            onChange={(e) =>
-              setOpacity(Number(e.target.value))
-            }
-            style={{ flex: 1 }}
-          />
-          <span style={labelStyle}>
-            {Math.round(opacity * 100)}%
-          </span>
+          <button
+            onClick={() => setShowOverlay((s) => !s)}
+            style={{
+              ...pillStyle,
+              background: showOverlay ? "#2563eb" : "#374151"
+            }}
+          >
+            {showOverlay ? "Hide" : "Show"}
+          </button>
         </div>
       )}
 
