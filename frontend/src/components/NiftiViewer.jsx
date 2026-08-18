@@ -2,18 +2,29 @@ import { useEffect, useRef, useState } from "react";
 import * as nifti from "nifti-reader-js";
 
 /*
- * Minimal NIfTI (.nii / .nii.gz) volume viewer.
- * Renders axial slices to a canvas with a slice
- * slider. DICOM studies keep using DicomViewer.
+ * NIfTI (.nii / .nii.gz) volume viewer with an optional
+ * segmentation overlay (e.g. an AVM mask) painted over
+ * the base CT in colour, with an opacity control.
+ *
+ * The overlay is expected to be pre-registered to the
+ * base (same voxel grid) — registration/segmentation
+ * happen in external tools; the platform displays them.
  */
-export default function NiftiViewer({ fileUrl }) {
+export default function NiftiViewer({ fileUrl, overlayUrl }) {
   const canvasRef = useRef(null);
 
   const [volume, setVolume] = useState(null);
+  const [overlay, setOverlay] = useState(null);
+  const [overlayWarning, setOverlayWarning] = useState("");
+
   const [slice, setSlice] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [showOverlay, setShowOverlay] = useState(true);
+  const [opacity, setOpacity] = useState(0.5);
+
+  // Load the base volume (and compute its window).
   useEffect(() => {
     let cancelled = false;
 
@@ -22,85 +33,23 @@ export default function NiftiViewer({ fileUrl }) {
         setLoading(true);
         setError("");
 
-        const response = await fetch(fileUrl);
+        const vol = await loadVolume(fileUrl);
 
-        if (!response.ok) {
-          throw new Error("Failed to download file");
-        }
-
-        let data = await response.arrayBuffer();
-
-        if (nifti.isCompressed(data)) {
-          data = nifti.decompress(data);
-        }
-
-        if (!nifti.isNIFTI(data)) {
-          throw new Error("Not a valid NIfTI file");
-        }
-
-        const header = nifti.readHeader(data);
-        const imageBuffer = nifti.readImage(header, data);
-
-        const voxels = toTypedArray(header, imageBuffer);
-
-        if (!voxels) {
-          throw new Error(
-            `Unsupported NIfTI datatype (code ${header.datatypeCode})`
-          );
-        }
-
-        const nx = header.dims[1];
-        const ny = header.dims[2];
-        const nz = Math.max(header.dims[3] || 1, 1);
-
-        // Some synthetic/test files store data only in
-        // time or higher dimensions — nothing to draw.
-        if (nx * ny < 4) {
+        // Guard against files with no real image plane.
+        if (vol.nx * vol.ny < 4) {
           throw new Error(
             `This file has no displayable image plane ` +
-              `(spatial dimensions ${nx}×${ny}×${nz}). ` +
+              `(spatial dimensions ${vol.nx}×${vol.ny}×${vol.nz}). ` +
               `Please upload a scan with real image slices.`
           );
         }
 
-        // Rescale slope/intercept (0 slope means unset)
-        const slope = header.scl_slope || 1;
-        const inter = header.scl_inter || 0;
-
-        // Sample the volume for a stable global
-        // intensity window across slices.
-        let min = Infinity;
-        let max = -Infinity;
-
-        const total = nx * ny * nz;
-        const stride = Math.max(
-          1,
-          Math.floor(total / 500000)
-        );
-
-        for (let i = 0; i < total; i += stride) {
-          const v = voxels[i] * slope + inter;
-          if (v < min) min = v;
-          if (v > max) max = v;
-        }
-
-        if (min === max) max = min + 1;
+        computeWindow(vol);
 
         if (cancelled) return;
 
-        setVolume({
-          voxels,
-          nx,
-          ny,
-          nz,
-          slope,
-          inter,
-          min,
-          max,
-          header
-        });
-
-        setSlice(Math.floor(nz / 2));
+        setVolume(vol);
+        setSlice(Math.floor(vol.nz / 2));
       } catch (err) {
         console.error(err);
         if (!cancelled) {
@@ -120,18 +69,64 @@ export default function NiftiViewer({ fileUrl }) {
     };
   }, [fileUrl]);
 
+  // Load the optional overlay mask.
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!overlayUrl) {
+      setOverlay(null);
+      setOverlayWarning("");
+      return;
+    }
+
+    const load = async () => {
+      try {
+        const ov = await loadVolume(overlayUrl);
+        if (cancelled) return;
+        setOverlay(ov);
+        setOverlayWarning("");
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) {
+          setOverlay(null);
+          setOverlayWarning(
+            "Overlay could not be loaded."
+          );
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [overlayUrl]);
+
+  // Flag a geometry mismatch once both are loaded.
+  useEffect(() => {
+    if (!volume || !overlay) return;
+
+    if (
+      overlay.nx !== volume.nx ||
+      overlay.ny !== volume.ny ||
+      overlay.nz !== volume.nz
+    ) {
+      setOverlayWarning(
+        `Overlay geometry ${overlay.nx}×${overlay.ny}×${overlay.nz} ` +
+          `does not match the CT ${volume.nx}×${volume.ny}×${volume.nz}. ` +
+          `The mask must be registered to this scan first.`
+      );
+    } else {
+      setOverlayWarning("");
+    }
+  }, [volume, overlay]);
+
+  // Render the current slice (base + optional overlay).
   useEffect(() => {
     if (!volume || !canvasRef.current) return;
 
-    const {
-      voxels,
-      nx,
-      ny,
-      slope,
-      inter,
-      min,
-      max
-    } = volume;
+    const { voxels, nx, ny, slope, inter, min, max } = volume;
 
     const canvas = canvasRef.current;
     canvas.width = nx;
@@ -141,37 +136,51 @@ export default function NiftiViewer({ fileUrl }) {
     const imageData = ctx.createImageData(nx, ny);
 
     const sliceOffset = slice * nx * ny;
-    const range = max - min;
+    const range = max - min || 1;
+
+    const geometryOk =
+      overlay &&
+      overlay.nx === nx &&
+      overlay.ny === ny &&
+      overlay.nz === volume.nz;
+
+    const drawOverlay =
+      showOverlay && geometryOk && opacity > 0;
 
     for (let y = 0; y < ny; y++) {
-
       // NIfTI rows run bottom-up; canvas top-down.
       const srcRow = (ny - 1 - y) * nx;
       const dstRow = y * nx;
 
       for (let x = 0; x < nx; x++) {
-        const v =
-          voxels[sliceOffset + srcRow + x] * slope +
-          inter;
+        const srcIdx = sliceOffset + srcRow + x;
 
-        const g = Math.max(
-          0,
-          Math.min(
-            255,
-            Math.round(((v - min) / range) * 255)
-          )
-        );
+        const v = voxels[srcIdx] * slope + inter;
+
+        let g = Math.round(((v - min) / range) * 255);
+        g = g < 0 ? 0 : g > 255 ? 255 : g;
+
+        let r = g;
+        let gg = g;
+        let b = g;
+
+        // Paint mask voxels (any non-zero label) red.
+        if (drawOverlay && overlay.voxels[srcIdx] !== 0) {
+          r = Math.round(g * (1 - opacity) + 255 * opacity);
+          gg = Math.round(g * (1 - opacity));
+          b = Math.round(g * (1 - opacity));
+        }
 
         const p = (dstRow + x) * 4;
-        imageData.data[p] = g;
-        imageData.data[p + 1] = g;
-        imageData.data[p + 2] = g;
+        imageData.data[p] = r;
+        imageData.data[p + 1] = gg;
+        imageData.data[p + 2] = b;
         imageData.data[p + 3] = 255;
       }
     }
 
     ctx.putImageData(imageData, 0, 0);
-  }, [volume, slice]);
+  }, [volume, overlay, slice, showOverlay, opacity]);
 
   if (loading) {
     return (
@@ -192,6 +201,7 @@ export default function NiftiViewer({ fileUrl }) {
   }
 
   const pixDims = volume.header.pixDims || [];
+  const hasOverlay = !!overlay && !overlayWarning;
 
   return (
     <div style={boxStyle}>
@@ -206,56 +216,145 @@ export default function NiftiViewer({ fileUrl }) {
       />
 
       {volume.nz > 1 && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            width: "100%",
-            maxWidth: "500px"
-          }}
-        >
+        <div style={rowStyle}>
+          <span style={labelStyle}>Slice</span>
           <input
             type="range"
             min={0}
             max={volume.nz - 1}
             value={slice}
-            onChange={(e) =>
-              setSlice(Number(e.target.value))
-            }
+            onChange={(e) => setSlice(Number(e.target.value))}
             style={{ flex: 1 }}
           />
-
-          <span
-            style={{
-              color: "white",
-              fontSize: "14px",
-              whiteSpace: "nowrap"
-            }}
-          >
-            Slice {slice + 1} / {volume.nz}
+          <span style={labelStyle}>
+            {slice + 1} / {volume.nz}
           </span>
         </div>
       )}
 
-      <p
-        style={{
-          color: "#9ca3af",
-          fontSize: "13px",
-          margin: 0
-        }}
-      >
+      {hasOverlay && (
+        <div style={rowStyle}>
+          <label
+            style={{
+              ...labelStyle,
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer"
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showOverlay}
+              onChange={(e) => setShowOverlay(e.target.checked)}
+            />
+            <span style={{ color: "#f87171" }}>■</span> AVM
+            overlay
+          </label>
+
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={opacity}
+            disabled={!showOverlay}
+            onChange={(e) => setOpacity(Number(e.target.value))}
+            style={{ flex: 1 }}
+          />
+          <span style={labelStyle}>
+            {Math.round(opacity * 100)}%
+          </span>
+        </div>
+      )}
+
+      {overlayWarning && (
+        <p
+          style={{
+            color: "#fcd34d",
+            fontSize: "13px",
+            margin: 0,
+            maxWidth: "500px",
+            textAlign: "center"
+          }}
+        >
+          {overlayWarning}
+        </p>
+      )}
+
+      <p style={{ color: "#9ca3af", fontSize: "13px", margin: 0 }}>
         {volume.nx} × {volume.ny} × {volume.nz}
         {pixDims[1]
           ? ` — voxel ${pixDims[1].toFixed(2)} × ${(
               pixDims[2] || 0
-            ).toFixed(2)} × ${(
-              pixDims[3] || 0
-            ).toFixed(2)} mm`
+            ).toFixed(2)} × ${(pixDims[3] || 0).toFixed(2)} mm`
           : ""}
+        {hasOverlay ? " — AVM overlay loaded" : ""}
       </p>
     </div>
   );
+}
+
+// Fetch, decompress and parse a NIfTI URL into a volume.
+async function loadVolume(url) {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to download file");
+  }
+
+  let data = await response.arrayBuffer();
+
+  if (nifti.isCompressed(data)) {
+    data = nifti.decompress(data);
+  }
+
+  if (!nifti.isNIFTI(data)) {
+    throw new Error("Not a valid NIfTI file");
+  }
+
+  const header = nifti.readHeader(data);
+  const imageBuffer = nifti.readImage(header, data);
+  const voxels = toTypedArray(header, imageBuffer);
+
+  if (!voxels) {
+    throw new Error(
+      `Unsupported NIfTI datatype (code ${header.datatypeCode})`
+    );
+  }
+
+  return {
+    voxels,
+    nx: header.dims[1],
+    ny: header.dims[2],
+    nz: Math.max(header.dims[3] || 1, 1),
+    slope: header.scl_slope || 1,
+    inter: header.scl_inter || 0,
+    min: 0,
+    max: 1,
+    header
+  };
+}
+
+// Compute a stable global intensity window on a volume.
+function computeWindow(vol) {
+  const { voxels, nx, ny, slope, inter } = vol;
+  const total = nx * ny * vol.nz;
+  const stride = Math.max(1, Math.floor(total / 500000));
+
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (let i = 0; i < total; i += stride) {
+    const v = voxels[i] * slope + inter;
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+
+  if (min === max) max = min + 1;
+
+  vol.min = min;
+  vol.max = max;
 }
 
 function toTypedArray(header, buffer) {
@@ -278,41 +377,28 @@ function toTypedArray(header, buffer) {
       return new Float64Array(buffer);
 
     case nifti.NIFTI1.TYPE_INT64:
-      return Float64Array.from(
-        new BigInt64Array(buffer),
-        Number
-      );
+      return Float64Array.from(new BigInt64Array(buffer), Number);
 
     case nifti.NIFTI1.TYPE_UINT64:
-      return Float64Array.from(
-        new BigUint64Array(buffer),
-        Number
-      );
+      return Float64Array.from(new BigUint64Array(buffer), Number);
 
-    // Complex volumes (e.g. raw MRI data): display
-    // the magnitude of each voxel.
+    // Complex volumes (e.g. raw MRI data): magnitude.
     case nifti.NIFTI1.TYPE_COMPLEX64:
-      return complexMagnitude(
-        new Float32Array(buffer)
-      );
+      return complexMagnitude(new Float32Array(buffer));
 
     case nifti.NIFTI1.TYPE_COMPLEX128:
-      return complexMagnitude(
-        new Float64Array(buffer)
-      );
+      return complexMagnitude(new Float64Array(buffer));
 
-    // RGB volumes: display luminance.
+    // RGB volumes: luminance.
     case nifti.NIFTI1.TYPE_RGB24: {
       const rgb = new Uint8Array(buffer);
       const out = new Float32Array(rgb.length / 3);
-
       for (let i = 0; i < out.length; i++) {
         out[i] =
           0.299 * rgb[i * 3] +
           0.587 * rgb[i * 3 + 1] +
           0.114 * rgb[i * 3 + 2];
       }
-
       return out;
     }
 
@@ -323,13 +409,11 @@ function toTypedArray(header, buffer) {
 
 function complexMagnitude(pairs) {
   const out = new Float64Array(pairs.length / 2);
-
   for (let i = 0; i < out.length; i++) {
     const re = pairs[i * 2];
     const im = pairs[i * 2 + 1];
     out[i] = Math.sqrt(re * re + im * im);
   }
-
   return out;
 }
 
@@ -342,4 +426,18 @@ const boxStyle = {
   flexDirection: "column",
   alignItems: "center",
   gap: "14px"
+};
+
+const rowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  width: "100%",
+  maxWidth: "500px"
+};
+
+const labelStyle = {
+  color: "white",
+  fontSize: "14px",
+  whiteSpace: "nowrap"
 };
