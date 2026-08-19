@@ -330,7 +330,7 @@ export default function AdminUsersPage({
                         title="Reset password"
                       >
                         <IconKey size={16} />
-                        Reset
+                        Reset Password
                       </button>
                     </td>
                   </tr>
