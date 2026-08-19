@@ -1,5 +1,26 @@
 import { Link, useNavigate } from "react-router-dom";
+import {
+  IconLayoutDashboard,
+  IconListCheck,
+  IconClipboardList,
+  IconPlus,
+  IconUsers,
+  IconStethoscope,
+  IconDeviceDesktop,
+  IconCategory,
+  IconChartBar,
+  IconUser
+} from "@tabler/icons-react";
 import { useAuth } from "../context/AuthContext";
+
+function NavLink({ to, icon, label }) {
+  return (
+    <Link style={linkStyle} to={to}>
+      {icon}
+      {label}
+    </Link>
+  );
+}
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -43,65 +64,90 @@ export default function Layout({ children }) {
             gap: "12px"
           }}
         >
-          <Link
-            style={linkStyle}
-            to="/dashboard"
-          >
-            Dashboard
-          </Link>
+          {user?.role !== "admin" && (
+            <NavLink
+              to="/dashboard"
+              icon={<IconLayoutDashboard size={18} stroke={1.75} />}
+              label="Dashboard"
+            />
+          )}
 
           {/* Technician Menu */}
           {user?.role === "technician" && (
-            <Link
-              style={linkStyle}
+            <NavLink
               to="/requests"
-            >
-              Imaging Requests
-            </Link>
+              icon={<IconListCheck size={18} stroke={1.75} />}
+              label="Imaging Requests"
+            />
           )}
 
           {/* Doctor Menu */}
           {user?.role === "doctor" && (
             <>
-              <Link
-                style={linkStyle}
+              <NavLink
                 to="/worklist"
-              >
-                Worklist
-              </Link>
-
-              <Link
-                style={linkStyle}
+                icon={<IconClipboardList size={18} stroke={1.75} />}
+                label="Worklist"
+              />
+              <NavLink
                 to="/requests/new"
-              >
-                New Request
-              </Link>
-
-              <Link
-                style={linkStyle}
+                icon={<IconPlus size={18} stroke={1.75} />}
+                label="New Request"
+              />
+              <NavLink
                 to="/requests"
-              >
-                Imaging Requests
-              </Link>
+                icon={<IconListCheck size={18} stroke={1.75} />}
+                label="Imaging Requests"
+              />
             </>
           )}
 
-          {/* Admin Menu (future use) */}
+          {/* Admin Menu */}
           {user?.role === "admin" && (
-            <Link
-              style={linkStyle}
-              to="/requests"
-            >
-              All Requests
-            </Link>
+            <>
+              <NavLink
+                to="/admin/dashboard"
+                icon={<IconLayoutDashboard size={18} stroke={1.75} />}
+                label="Overview"
+              />
+              <NavLink
+                to="/admin/users"
+                icon={<IconUsers size={18} stroke={1.75} />}
+                label="Users"
+              />
+              <NavLink
+                to="/admin/doctors"
+                icon={<IconStethoscope size={18} stroke={1.75} />}
+                label="Doctors"
+              />
+              <NavLink
+                to="/admin/technicians"
+                icon={<IconDeviceDesktop size={18} stroke={1.75} />}
+                label="Technicians"
+              />
+              <NavLink
+                to="/admin/requests"
+                icon={<IconListCheck size={18} stroke={1.75} />}
+                label="Imaging Requests"
+              />
+              <NavLink
+                to="/admin/specializations"
+                icon={<IconCategory size={18} stroke={1.75} />}
+                label="Specializations"
+              />
+              <NavLink
+                to="/admin/reports"
+                icon={<IconChartBar size={18} stroke={1.75} />}
+                label="Reports"
+              />
+            </>
           )}
 
-          <Link
-            style={linkStyle}
+          <NavLink
             to="/profile"
-          >
-            Profile
-          </Link>
+            icon={<IconUser size={18} stroke={1.75} />}
+            label="Profile"
+          />
         </nav>
       </aside>
 
@@ -190,9 +236,13 @@ export default function Layout({ children }) {
 }
 
 const linkStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
   color: "white",
   textDecoration: "none",
   padding: "10px",
   borderRadius: "6px",
-  background: "#1f2937"
+  background: "#1f2937",
+  fontSize: "14px"
 };

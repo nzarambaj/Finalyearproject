@@ -1,7 +1,6 @@
 import {
   Routes,
-  Route,
-  Navigate
+  Route
 } from "react-router-dom";
 
 import LoginPage from "./pages/LoginPage";
@@ -18,6 +17,12 @@ import RequestsPage from "./pages/RequestsPage";
 import RequestDetailPage from "./pages/RequestDetailPage";
 import WorklistPage from "./pages/WorklistPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminRequestsPage from "./pages/AdminRequestsPage";
+import AdminSpecializationsPage from "./pages/AdminSpecializationsPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
+import LandingPage from "./pages/LandingPage";
 
 export default function App() {
   return (
@@ -25,7 +30,7 @@ export default function App() {
 
       <Route
         path="/"
-        element={<Navigate to="/login" />}
+        element={<LandingPage />}
       />
 
       <Route
@@ -83,6 +88,69 @@ export default function App() {
       <Route
         path="/admin"
         element={<AdminLoginPage />}
+      />
+
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminUsersPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/doctors"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminUsersPage initialRole="doctor" />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/technicians"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminUsersPage initialRole="technician" />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminReportsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/requests"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminRequestsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/specializations"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminSpecializationsPage />
+          </ProtectedRoute>
+        }
       />
 
       <Route

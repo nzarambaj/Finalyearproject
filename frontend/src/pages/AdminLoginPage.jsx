@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
       }
 
       login(data.token, data.user);
-      navigate("/register");
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {
@@ -67,11 +67,23 @@ export default function AdminLoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#0f172a"
+        backgroundImage: "url('/images/login-bg.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
       }}
     >
       <div
         style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0,0,0,0.45)"
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
           width: "100%",
           maxWidth: "380px",
           background: "white",
