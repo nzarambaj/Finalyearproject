@@ -87,6 +87,18 @@ export default function NiftiViewer({ fileUrl, overlayUrl }) {
 
         if (cancelled) return;
 
+        // A mask's values (e.g. 0/1 labels) are tiny next
+        // to CT intensities. NiiVue otherwise inherits the
+        // CT window and the mask renders below-threshold
+        // (invisible), so window the overlay to its own
+        // range: hide background (0), colour every label.
+        if (overlayUrl && nv.volumes.length > 1) {
+          const ov = nv.volumes[1];
+          ov.cal_min = 0.5;
+          ov.cal_max = ov.global_max > 1 ? ov.global_max : 1;
+          nv.updateGLVolume();
+        }
+
         nv.setSliceType(SLICE[view] ?? SLICE.multi);
       } catch (err) {
         console.error(err);
