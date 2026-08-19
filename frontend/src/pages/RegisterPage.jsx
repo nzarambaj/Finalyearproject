@@ -2,16 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { API as API_URL } from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
 const navigate = useNavigate();
-const { logout } = useAuth();
-
-const handleLogout = () => {
-  logout();
-  navigate("/");
-};
 
 const [specializations, setSpecializations] = useState([]);
 
@@ -411,7 +404,7 @@ return (
         >
         <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => navigate("/admin/users")}
             style={{
             color: "#2563eb",
             fontWeight: "600",
@@ -421,7 +414,7 @@ return (
             fontSize: "inherit"
             }}
         >
-            Log out
+            Back to dashboard
         </button>
         </p>
     </div>
