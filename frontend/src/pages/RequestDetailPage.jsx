@@ -210,125 +210,152 @@ export default function RequestDetailPage() {
           </div>
         </div>
 
-        {/* Patient record */}
-        <div style={cardStyle}>
-          <h3 style={{ marginTop: 0 }}>
-            Patient Record
-          </h3>
+        {/* Patient Record + Findings & Comments side
+            by side, above the (taller) viewer. */}
+        <div
+          style={{
+            display: "flex",
+            gap: "20px",
+            flexWrap: "wrap",
+            alignItems: "flex-start"
+          }}
+        >
+          {/* Patient record */}
+          <div style={{ ...cardStyle, flex: "1 1 340px" }}>
+            <h3 style={{ marginTop: 0 }}>
+              Patient Record
+            </h3>
 
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "24px"
-            }}
-          >
-            <p style={infoStyle}>
-              <strong>Name:</strong>{" "}
-              {request.patient_name}
-            </p>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "24px"
+              }}
+            >
+              <p style={infoStyle}>
+                <strong>Name:</strong>{" "}
+                {request.patient_name}
+              </p>
 
-            <p style={infoStyle}>
-              <strong>Date of Birth:</strong>{" "}
-              {request.date_of_birth
-                ? new Date(
-                    request.date_of_birth
-                  ).toLocaleDateString()
-                : "-"}
-            </p>
+              <p style={infoStyle}>
+                <strong>Date of Birth:</strong>{" "}
+                {request.date_of_birth
+                  ? new Date(
+                      request.date_of_birth
+                    ).toLocaleDateString()
+                  : "-"}
+              </p>
 
-            <p style={infoStyle}>
-              <strong>Gender:</strong>{" "}
-              {request.gender || "-"}
-            </p>
+              <p style={infoStyle}>
+                <strong>Gender:</strong>{" "}
+                {request.gender || "-"}
+              </p>
 
-            <p style={infoStyle}>
-              <strong>Phone:</strong>{" "}
-              {request.phone || "-"}
-            </p>
+              <p style={infoStyle}>
+                <strong>Phone:</strong>{" "}
+                {request.phone || "-"}
+              </p>
 
-            <p style={infoStyle}>
-              <strong>Address:</strong>{" "}
-              {request.address || "-"}
+              <p style={infoStyle}>
+                <strong>Address:</strong>{" "}
+                {request.address || "-"}
+              </p>
+            </div>
+
+            <h4 style={{ marginBottom: "6px" }}>
+              Doctor's Clinical Notes
+            </h4>
+
+            <p
+              style={{
+                margin: 0,
+                whiteSpace: "pre-wrap",
+                background: "#f9fafb",
+                borderRadius: "6px",
+                padding: "12px"
+              }}
+            >
+              {request.clinical_notes ||
+                "No notes provided."}
             </p>
           </div>
 
-          <h4 style={{ marginBottom: "6px" }}>
-            Doctor's Clinical Notes
-          </h4>
-
-          <p
-            style={{
-              margin: 0,
-              whiteSpace: "pre-wrap",
-              background: "#f9fafb",
-              borderRadius: "6px",
-              padding: "12px"
-            }}
-          >
-            {request.clinical_notes ||
-              "No notes provided."}
-          </p>
-        </div>
-
-        {/* Technician upload */}
-        {user?.role === "technician" &&
-          request.status !== "completed" && (
-            <div style={cardStyle}>
-              <h3 style={{ marginTop: 0 }}>
-                Upload Image
-              </h3>
-
-              {uploadError && (
-                <div style={errorBox}>
-                  {uploadError}
-                </div>
-              )}
-
-              {uploadMessage && (
-                <div style={successBox}>
-                  {uploadMessage}
-                </div>
-              )}
-
-              <form
-                onSubmit={handleUpload}
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                  alignItems: "center"
-                }}
-              >
-                <input
-                  type="file"
-                  accept=".dcm,.nii,.nii.gz,application/gzip"
-                  onChange={(e) =>
-                    setFile(e.target.files[0])
-                  }
-                />
-
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  style={{
-                    background: "#2563eb",
-                    color: "white",
-                    border: "none",
-                    padding: "10px 18px",
-                    borderRadius: "6px",
-                    cursor: "pointer"
-                  }}
-                >
-                  {uploading
-                    ? "Uploading..."
-                    : "Upload"}
-                </button>
-              </form>
+          {/* Findings & Comments (doctor/admin) */}
+          {(user?.role === "doctor" ||
+            user?.role === "admin") && (
+            <div style={{ flex: "1 1 340px" }}>
+              <RequestComments
+                requestId={id}
+                canComment={isOwner}
+              />
             </div>
           )}
 
-        {/* Image viewer */}
+          {/* Technician upload (technician, pending) */}
+          {user?.role === "technician" &&
+            request.status !== "completed" && (
+              <div
+                style={{
+                  ...cardStyle,
+                  flex: "1 1 340px"
+                }}
+              >
+                <h3 style={{ marginTop: 0 }}>
+                  Upload Image
+                </h3>
+
+                {uploadError && (
+                  <div style={errorBox}>
+                    {uploadError}
+                  </div>
+                )}
+
+                {uploadMessage && (
+                  <div style={successBox}>
+                    {uploadMessage}
+                  </div>
+                )}
+
+                <form
+                  onSubmit={handleUpload}
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                    alignItems: "center"
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept=".dcm,.nii,.nii.gz,application/gzip"
+                    onChange={(e) =>
+                      setFile(e.target.files[0])
+                    }
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    style={{
+                      background: "#2563eb",
+                      color: "white",
+                      border: "none",
+                      padding: "10px 18px",
+                      borderRadius: "6px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {uploading
+                      ? "Uploading..."
+                      : "Upload"}
+                  </button>
+                </form>
+              </div>
+            )}
+        </div>
+
+        {/* Image viewer (full width, below the row) */}
         {request.study_id &&
           (isNifti ? (
             <NiftiViewer fileUrl={request.file_url} />
@@ -337,16 +364,6 @@ export default function RequestDetailPage() {
               studyId={request.study_id}
             />
           ))}
-
-        {/* Comments: any doctor can read; only the
-            requesting doctor can add one. */}
-        {(user?.role === "doctor" ||
-          user?.role === "admin") && (
-          <RequestComments
-            requestId={id}
-            canComment={isOwner}
-          />
-        )}
       </div>
     </Layout>
   );

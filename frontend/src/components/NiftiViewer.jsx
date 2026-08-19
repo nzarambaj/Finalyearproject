@@ -158,12 +158,18 @@ export default function NiftiViewer({ fileUrl, overlayUrl }) {
 
   return (
     <div style={boxStyle}>
-      <div style={{ position: "relative", width: "100%" }}>
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "300px"
+        }}
+      >
         <canvas
           ref={canvasRef}
           style={{
             width: "100%",
-            height: "70vh",
+            height: "100%",
             display: "block",
             background: "black",
             borderRadius: "6px"
