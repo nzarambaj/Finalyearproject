@@ -147,71 +147,8 @@ export default function RequestDetailPage() {
           maxWidth: "1200px"
         }}
       >
-        {/* Request summary */}
-        <div style={cardStyle}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "10px"
-            }}
-          >
-            <h2 style={{ margin: 0 }}>
-              {request.request_number}
-            </h2>
-
-            <span
-              style={{
-                padding: "6px 14px",
-                borderRadius: "20px",
-                fontSize: "13px",
-                background:
-                  request.status === "completed"
-                    ? "#dcfce7"
-                    : "#fef9c3",
-                color:
-                  request.status === "completed"
-                    ? "#166534"
-                    : "#854d0e"
-              }}
-            >
-              {request.status === "completed"
-                ? "Image uploaded"
-                : "Waiting for imaging"}
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "24px",
-              marginTop: "14px"
-            }}
-          >
-            <p style={infoStyle}>
-              <strong>Requested Exam:</strong>{" "}
-              {request.exam_type}
-            </p>
-
-            <p style={infoStyle}>
-              <strong>Doctor:</strong>{" "}
-              {request.doctor_name}
-            </p>
-
-            <p style={infoStyle}>
-              <strong>Date:</strong>{" "}
-              {new Date(
-                request.created_at
-              ).toLocaleString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Patient Record + Findings & Comments side
-            by side, above the (taller) viewer. */}
+        {/* Request summary + Findings & Comments
+            side by side. */}
         <div
           style={{
             display: "flex",
@@ -220,65 +157,67 @@ export default function RequestDetailPage() {
             alignItems: "flex-start"
           }}
         >
-          {/* Patient record */}
+          {/* Request summary */}
           <div style={{ ...cardStyle, flex: "1 1 340px" }}>
-            <h3 style={{ marginTop: 0 }}>
-              Patient Record
-            </h3>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "10px"
+              }}
+            >
+              <h2 style={{ margin: 0 }}>
+                {request.request_number}
+              </h2>
+
+              <span
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  fontSize: "13px",
+                  background:
+                    request.status === "completed"
+                      ? "#dcfce7"
+                      : "#fef9c3",
+                  color:
+                    request.status === "completed"
+                      ? "#166534"
+                      : "#854d0e"
+                }}
+              >
+                {request.status === "completed"
+                  ? "Image uploaded"
+                  : "Waiting for imaging"}
+              </span>
+            </div>
 
             <div
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "24px"
+                gap: "24px",
+                marginTop: "14px"
               }}
             >
               <p style={infoStyle}>
-                <strong>Name:</strong>{" "}
-                {request.patient_name}
+                <strong>Requested Exam:</strong>{" "}
+                {request.exam_type}
               </p>
 
               <p style={infoStyle}>
-                <strong>Date of Birth:</strong>{" "}
-                {request.date_of_birth
-                  ? new Date(
-                      request.date_of_birth
-                    ).toLocaleDateString()
-                  : "-"}
+                <strong>Doctor:</strong>{" "}
+                {request.doctor_name}
               </p>
 
               <p style={infoStyle}>
-                <strong>Gender:</strong>{" "}
-                {request.gender || "-"}
-              </p>
-
-              <p style={infoStyle}>
-                <strong>Phone:</strong>{" "}
-                {request.phone || "-"}
-              </p>
-
-              <p style={infoStyle}>
-                <strong>Address:</strong>{" "}
-                {request.address || "-"}
+                <strong>Date:</strong>{" "}
+                {new Date(
+                  request.created_at
+                ).toLocaleString()}
               </p>
             </div>
-
-            <h4 style={{ marginBottom: "6px" }}>
-              Doctor's Clinical Notes
-            </h4>
-
-            <p
-              style={{
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                background: "#f9fafb",
-                borderRadius: "6px",
-                padding: "12px"
-              }}
-            >
-              {request.clinical_notes ||
-                "No notes provided."}
-            </p>
           </div>
 
           {/* Findings & Comments (doctor/admin) */}
@@ -353,6 +292,67 @@ export default function RequestDetailPage() {
                 </form>
               </div>
             )}
+        </div>
+
+        {/* Patient record (full width, below the row) */}
+        <div style={cardStyle}>
+          <h3 style={{ marginTop: 0 }}>
+            Patient Record
+          </h3>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "24px"
+            }}
+          >
+            <p style={infoStyle}>
+              <strong>Name:</strong>{" "}
+              {request.patient_name}
+            </p>
+
+            <p style={infoStyle}>
+              <strong>Date of Birth:</strong>{" "}
+              {request.date_of_birth
+                ? new Date(
+                    request.date_of_birth
+                  ).toLocaleDateString()
+                : "-"}
+            </p>
+
+            <p style={infoStyle}>
+              <strong>Gender:</strong>{" "}
+              {request.gender || "-"}
+            </p>
+
+            <p style={infoStyle}>
+              <strong>Phone:</strong>{" "}
+              {request.phone || "-"}
+            </p>
+
+            <p style={infoStyle}>
+              <strong>Address:</strong>{" "}
+              {request.address || "-"}
+            </p>
+          </div>
+
+          <h4 style={{ marginBottom: "6px" }}>
+            Doctor's Clinical Notes
+          </h4>
+
+          <p
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              background: "#f9fafb",
+              borderRadius: "6px",
+              padding: "12px"
+            }}
+          >
+            {request.clinical_notes ||
+              "No notes provided."}
+          </p>
         </div>
 
         {/* Image viewer (full width, below the row) */}
