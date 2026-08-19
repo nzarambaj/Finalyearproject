@@ -10,7 +10,7 @@ const { logout } = useAuth();
 
 const handleLogout = () => {
   logout();
-  navigate("/admin");
+  navigate("/");
 };
 
 const [specializations, setSpecializations] = useState([]);

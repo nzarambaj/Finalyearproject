@@ -12,14 +12,14 @@ export default function ProtectedRoute({
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/" />;
   }
 
   if (
     roles.length > 0 &&
     !roles.includes(user.role)
   ) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/" />;
   }
 
   return children;
