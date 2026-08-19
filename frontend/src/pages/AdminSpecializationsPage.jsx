@@ -9,6 +9,7 @@ import {
 
 import Layout from "../components/Layout";
 import Pagination from "../components/Pagination";
+import TableScroll from "../components/TableScroll";
 import { adminSend } from "../services/adminApi";
 import { API } from "../services/api";
 
@@ -152,7 +153,8 @@ export default function AdminSpecializationsPage() {
           {loading ? (
             <p>Loading...</p>
           ) : (
-            <table style={table}>
+            <TableScroll maxHeight="calc(100vh - 340px)">
+              <table style={table}>
               <thead>
                 <tr>
                   <th style={th}>Specialization</th>
@@ -242,7 +244,8 @@ export default function AdminSpecializationsPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </TableScroll>
           )}
           <Pagination
             page={page}
@@ -278,7 +281,11 @@ const th = {
   padding: "8px 6px",
   borderBottom: "1px solid #ddd",
   fontSize: "13px",
-  color: "#6b7280"
+  color: "#6b7280",
+  position: "sticky",
+  top: 0,
+  background: "white",
+  zIndex: 1
 };
 const td = {
   padding: "10px 6px",

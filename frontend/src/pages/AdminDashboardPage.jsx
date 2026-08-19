@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 
 import Layout from "../components/Layout";
+import TableScroll from "../components/TableScroll";
 import { adminGet } from "../services/adminApi";
 import { API } from "../services/api";
 
@@ -151,7 +152,8 @@ export default function AdminDashboardPage() {
                   No requests yet.
                 </p>
               ) : (
-                <table style={table}>
+                <TableScroll maxHeight="320px">
+                  <table style={table}>
                   <thead>
                     <tr>
                       <th style={th}>Request</th>
@@ -176,7 +178,8 @@ export default function AdminDashboardPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                  </table>
+                </TableScroll>
               )}
             </div>
           </>
@@ -249,7 +252,11 @@ const th = {
   padding: "8px 6px",
   borderBottom: "1px solid #ddd",
   fontSize: "13px",
-  color: "#6b7280"
+  color: "#6b7280",
+  position: "sticky",
+  top: 0,
+  background: "white",
+  zIndex: 1
 };
 const td = {
   padding: "10px 6px",
