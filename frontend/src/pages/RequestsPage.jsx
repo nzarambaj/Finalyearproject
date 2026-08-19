@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Layout from "../components/Layout";
+import TableScroll from "../components/TableScroll";
 import { API } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -148,6 +149,7 @@ export default function RequestsPage() {
         ) : requests.length === 0 ? (
           <p>No requests found.</p>
         ) : (
+          <TableScroll>
           <table
             style={{
               width: "100%",
@@ -251,6 +253,7 @@ export default function RequestsPage() {
               ))}
             </tbody>
           </table>
+          </TableScroll>
         )}
       </div>
     </Layout>
@@ -260,7 +263,11 @@ export default function RequestsPage() {
 const thStyle = {
   padding: "12px",
   borderBottom: "1px solid #ddd",
-  textAlign: "left"
+  textAlign: "left",
+  position: "sticky",
+  top: 0,
+  background: "white",
+  zIndex: 1
 };
 
 const tdStyle = {

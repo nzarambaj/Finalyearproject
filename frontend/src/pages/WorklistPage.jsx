@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Layout from "../components/Layout";
+import TableScroll from "../components/TableScroll";
 import { API } from "../services/api";
 
 /*
@@ -179,6 +180,7 @@ export default function WorklistPage() {
                   No requests yet.
                 </p>
               ) : (
+                <TableScroll maxHeight="calc(100vh - 380px)">
                 <table
                   style={{
                     width: "100%",
@@ -281,6 +283,7 @@ export default function WorklistPage() {
                     ))}
                   </tbody>
                 </table>
+                </TableScroll>
               )}
             </div>
           </>
