@@ -27,11 +27,6 @@ export default function RequestDetailPage() {
   const [uploadError, setUploadError] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
 
-  const [overlayFile, setOverlayFile] = useState(null);
-  const [overlayUploading, setOverlayUploading] = useState(false);
-  const [overlayError, setOverlayError] = useState("");
-  const [overlayMessage, setOverlayMessage] = useState("");
-
   const isOwner =
     user?.role === "doctor" &&
     request?.doctor_id === user?.id;
@@ -121,57 +116,6 @@ export default function RequestDetailPage() {
       setUploadError(err.message);
     } finally {
       setUploading(false);
-    }
-  };
-
-  const handleOverlayUpload = async (e) => {
-    e.preventDefault();
-
-    setOverlayError("");
-    setOverlayMessage("");
-
-    if (!overlayFile) {
-      setOverlayError(
-        "Select a NIfTI mask (.nii or .nii.gz)"
-      );
-      return;
-    }
-
-    try {
-      setOverlayUploading(true);
-
-      const formData = new FormData();
-      formData.append("file", overlayFile);
-
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        `${API}/requests/${id}/overlay`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-          body: formData
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Overlay upload failed"
-        );
-      }
-
-      setOverlayMessage("Overlay uploaded successfully");
-      setOverlayFile(null);
-
-      loadRequest();
-    } catch (err) {
-      setOverlayError(err.message);
-    } finally {
-      setOverlayUploading(false);
     }
   };
 
@@ -387,92 +331,12 @@ export default function RequestDetailPage() {
         {/* Image viewer */}
         {request.study_id &&
           (isNifti ? (
-            <NiftiViewer
-              fileUrl={request.file_url}
-              overlayUrl={request.overlay_url}
-            />
+            <NiftiViewer fileUrl={request.file_url} />
           ) : (
             <DicomViewer
               studyId={request.study_id}
             />
           ))}
-
-        {/* AVM overlay upload — NIfTI studies only.
-            Radiologist, technician, or admin. */}
-        {request.study_id &&
-          isNifti &&
-          (user?.role === "doctor" ||
-            user?.role === "technician" ||
-            user?.role === "admin") && (
-            <div style={cardStyle}>
-              <h3 style={{ marginTop: 0 }}>
-                AVM Segmentation Overlay
-              </h3>
-
-              <p
-                style={{
-                  color: "#6b7280",
-                  marginTop: 0,
-                  fontSize: "14px"
-                }}
-              >
-                Upload a NIfTI mask (produced in ITK-SNAP /
-                3D Slicer and registered to this CT). It
-                will be painted over the scan in the viewer
-                above.
-                {request.overlay_url
-                  ? " An overlay is already attached — uploading replaces it."
-                  : ""}
-              </p>
-
-              {overlayError && (
-                <div style={errorBox}>{overlayError}</div>
-              )}
-
-              {overlayMessage && (
-                <div style={successBox}>
-                  {overlayMessage}
-                </div>
-              )}
-
-              <form
-                onSubmit={handleOverlayUpload}
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                  alignItems: "center"
-                }}
-              >
-                <input
-                  type="file"
-                  accept=".nii,.nii.gz,application/gzip"
-                  onChange={(e) =>
-                    setOverlayFile(e.target.files[0])
-                  }
-                />
-
-                <button
-                  type="submit"
-                  disabled={overlayUploading}
-                  style={{
-                    background: "#7c3aed",
-                    color: "white",
-                    border: "none",
-                    padding: "10px 18px",
-                    borderRadius: "6px",
-                    cursor: "pointer"
-                  }}
-                >
-                  {overlayUploading
-                    ? "Uploading..."
-                    : request.overlay_url
-                    ? "Replace Overlay"
-                    : "Upload Overlay"}
-                </button>
-              </form>
-            </div>
-          )}
 
         {/* Comments: any doctor can read; only the
             requesting doctor can add one. */}
